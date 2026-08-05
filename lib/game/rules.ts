@@ -29,8 +29,9 @@ export function resolverRodada(input: {
   bet2: number;
   currentPosition: number;
   boardSize?: number;
+  correctOverride?: boolean;
 }) {
-  const correct = respostasIguais(input.answer1, input.answer2);
+  const correct = input.correctOverride ?? respostasIguais(input.answer1, input.answer2);
   const spacesMoved = correct ? input.bet1 + input.bet2 : 0;
   const nextPosition = correct
     ? limitarPosicao(input.currentPosition, spacesMoved, input.boardSize)

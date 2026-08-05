@@ -4,6 +4,7 @@ export type RoomStatus = "aguardando" | "em_andamento" | "finalizado";
 export type GameStatus =
   | "aguardando"
   | "aguardando_respostas"
+  | "validando_respostas"
   | "revelada"
   | "finalizado";
 
@@ -56,6 +57,10 @@ export interface Game {
   answer_2: string | null;
   answer_1_at: string | null;
   answer_2_at: string | null;
+  validation_1: boolean | null;
+  validation_2: boolean | null;
+  validation_1_at: string | null;
+  validation_2_at: string | null;
   winner_team: Team | null;
   skip_team: Team | null;
   version: number;

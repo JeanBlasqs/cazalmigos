@@ -23,6 +23,7 @@ export default function LobbyPage({ params }: { params: Promise<{ codigo: string
   const [busy, setBusy] = useState(false);
   const [startingGame, setStartingGame] = useState(false);
   const [introVisible, setIntroVisible] = useState(true);
+  const [testMode, setTestMode] = useState(false);
   const { state, refresh } = useGameRealtime(initial ?? emptyState, codigo);
   const onlineIds = useRoomPresence(codigo, playerId);
   const currentState = initial ? state : null;
@@ -38,6 +39,7 @@ export default function LobbyPage({ params }: { params: Promise<{ codigo: string
 
   useEffect(() => {
     setPlayerId(localStorage.getItem(`room:${codigo}:playerId`) ?? undefined);
+    setTestMode(localStorage.getItem(`room:${codigo}:testMode`) === "true");
     fetch(`/api/games/${codigo}/state`, { cache: "no-store" })
       .then((response) => response.json())
       .then((payload) => setInitial(payload));
@@ -78,6 +80,8 @@ export default function LobbyPage({ params }: { params: Promise<{ codigo: string
   async function fillTestPlayers() {
     setBusy(true);
     await fetch(`/api/rooms/${codigo}/dev-fill`, { method: "POST" });
+    localStorage.setItem(`room:${codigo}:testMode`, "true");
+    setTestMode(true);
     await refresh();
     setBusy(false);
   }
@@ -102,7 +106,7 @@ export default function LobbyPage({ params }: { params: Promise<{ codigo: string
   }
 
   return (
-    <main className={`relative h-screen overflow-hidden bg-zinc-950 text-white ${game ? "p-2" : "px-5 py-8"}`}>
+    <main className={`relative bg-zinc-950 text-white ${game ? "h-screen overflow-hidden p-2" : "min-h-screen overflow-y-auto px-5 py-8"}`}>
       <div className="absolute inset-0 bg-[url('/cazalmigos-hero.png')] bg-cover bg-center" />
       <div className={`absolute inset-0 transition-opacity duration-700 ${introVisible && !game ? "opacity-0" : "opacity-100"} bg-[linear-gradient(90deg,rgba(9,9,11,.94),rgba(9,9,11,.68)_55%,rgba(9,9,11,.45))]`} />
       {introVisible && !game && <div className="absolute inset-0 z-40" />}
@@ -170,7 +174,7 @@ export default function LobbyPage({ params }: { params: Promise<{ codigo: string
                   {alreadyAnswered && <p className="mt-1 text-sm font-black text-emerald-700">Sua resposta foi enviada.</p>}
                   {!isRoundPlayer && <p className="mt-1 text-sm font-bold text-zinc-600">Aguarde a dupla da vez responder.</p>}
                 </div>
-                <label className="min-w-[190px] rounded-xl bg-sky-50 p-2 text-xs font-black uppercase text-sky-900">
+                {testMode && <label className="min-w-[190px] rounded-xl bg-sky-50 p-2 text-xs font-black uppercase text-sky-900">
                   Testar como
                   <select
                     value={playerId ?? ""}
@@ -183,7 +187,7 @@ export default function LobbyPage({ params }: { params: Promise<{ codigo: string
                       </option>
                     ))}
                   </select>
-                </label>
+                </label>}
                 {me && isRoundPlayer && game.status === "aguardando_respostas" && (
                   <div className="min-w-[330px] flex-[1.8]">
                     <AnswerBetForm
@@ -201,7 +205,15 @@ export default function LobbyPage({ params }: { params: Promise<{ codigo: string
               <PlayerTokens players={currentState.players} />
               <Board teamAPosition={game.team_a_position} teamBPosition={game.team_b_position} />
             </div>
-            <RevealAnswers game={game} lastMove={lastMove} players={currentState.players} question={currentState.question} />
+            <RevealAnswers
+              game={game}
+              lastMove={lastMove}
+              players={currentState.players}
+              question={currentState.question}
+              currentPlayerId={playerId}
+              roomCode={codigo}
+              onValidated={refresh}
+            />
           </section>
         ) : (
           <>

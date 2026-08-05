@@ -66,7 +66,15 @@ export default function GamePage({ params }: { params: Promise<{ codigo: string 
             </div>
           </header>
           <Board teamAPosition={game.team_a_position} teamBPosition={game.team_b_position} />
-          <RevealAnswers game={game} lastMove={lastMove} players={currentState.players} question={currentState.question} />
+          <RevealAnswers
+            game={game}
+            lastMove={lastMove}
+            players={currentState.players}
+            question={currentState.question}
+            currentPlayerId={playerId}
+            roomCode={codigo}
+            onValidated={refresh}
+          />
         </section>
         <aside className="space-y-4">
           <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">

@@ -8,17 +8,120 @@ export function RevealAnswers({
   lastMove,
   players,
   question,
+  currentPlayerId,
+  roomCode,
+  onValidated,
 }: {
   game: Game;
   lastMove: Move | null;
   players: Player[];
   question: Question | null;
+  currentPlayerId?: string;
+  roomCode?: string;
+  onValidated?: () => void;
 }) {
   const [dismissedMoveId, setDismissedMoveId] = useState<string | null>(null);
+  const [validationChoice, setValidationChoice] = useState<boolean | null>(null);
+  const [validating, setValidating] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     setDismissedMoveId(null);
   }, [lastMove?.id]);
+
+  if (game.status === "validando_respostas") {
+    const player1 = players.find((player) => player.id === game.player_1_id);
+    const player2 = players.find((player) => player.id === game.player_2_id);
+    const currentPlayer = players.find((player) => player.id === currentPlayerId);
+    const isPlayer1 = currentPlayerId === game.player_1_id;
+    const isPlayer2 = currentPlayerId === game.player_2_id;
+    const partner = isPlayer1 ? player2 : isPlayer2 ? player1 : null;
+    const partnerAnswer = isPlayer1 ? game.answer_2 : isPlayer2 ? game.answer_1 : null;
+    const alreadyValidated = Boolean((isPlayer1 && game.validation_1_at) || (isPlayer2 && game.validation_2_at));
+
+    async function submitValidation() {
+      if (!roomCode || !currentPlayerId || validationChoice === null) return;
+      setValidating(true);
+      setValidationError(null);
+      const response = await fetch(`/api/games/${roomCode}/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId: currentPlayerId, approved: validationChoice }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      setValidating(false);
+      if (!response.ok) {
+        setValidationError(payload.error ?? "Nao foi possivel validar.");
+        return;
+      }
+      onValidated?.();
+    }
+
+    return (
+      <div className="fixed inset-0 z-40 grid place-items-center bg-black/45 p-4">
+        <section className="reveal-pop relative w-full max-w-2xl rounded-2xl border border-amber-300 bg-amber-50 p-5 text-zinc-950 shadow-2xl">
+          <p className="text-sm font-black uppercase text-amber-700">Validacao da dupla</p>
+          <h2 className="mt-1 text-xl font-black">{question?.question ?? "Pergunta da rodada"}</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl bg-white/80 p-3">
+              <p className="text-sm font-bold text-zinc-600">{player1?.name ?? "Jogador 1"}</p>
+              <p className="mt-1 text-lg font-black">{game.answer_1}</p>
+              <p className="text-sm text-zinc-500">
+                {game.validation_2_at ? "Resposta ja avaliada pelo parceiro" : "Aguardando avaliacao do parceiro"}
+              </p>
+            </div>
+            <div className="rounded-xl bg-white/80 p-3">
+              <p className="text-sm font-bold text-zinc-600">{player2?.name ?? "Jogador 2"}</p>
+              <p className="mt-1 text-lg font-black">{game.answer_2}</p>
+              <p className="text-sm text-zinc-500">
+                {game.validation_1_at ? "Resposta ja avaliada pelo parceiro" : "Aguardando avaliacao do parceiro"}
+              </p>
+            </div>
+          </div>
+          {partner ? (
+            <div className="mt-4 rounded-xl bg-white p-4">
+              <p className="text-sm font-bold text-zinc-600">
+                {currentPlayer?.name}, avalie a resposta de {partner.name}
+              </p>
+              <p className="mt-1 text-lg font-black">{partnerAnswer}</p>
+              {alreadyValidated ? (
+                <p className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700">
+                  Voce ja validou. Aguardando o parceiro, se ainda faltar.
+                </p>
+              ) : (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setValidationChoice(true)}
+                    className={`rounded-full px-5 py-3 text-lg font-black ${validationChoice === true ? "bg-emerald-600 text-white" : "bg-emerald-100 text-emerald-800"}`}
+                  >
+                    Check
+                  </button>
+                  <button
+                    onClick={() => setValidationChoice(false)}
+                    className={`rounded-full px-5 py-3 text-lg font-black ${validationChoice === false ? "bg-red-600 text-white" : "bg-red-100 text-red-800"}`}
+                  >
+                    X
+                  </button>
+                  <button
+                    onClick={submitValidation}
+                    disabled={validationChoice === null || validating}
+                    className="rounded-full bg-zinc-950 px-5 py-3 text-lg font-black text-white disabled:bg-zinc-300"
+                  >
+                    {validating ? "Confirmando..." : "Confirmar"}
+                  </button>
+                </div>
+              )}
+              {validationError && <p className="mt-3 text-sm font-bold text-red-600">{validationError}</p>}
+            </div>
+          ) : (
+            <p className="mt-4 rounded-xl bg-white p-4 text-sm font-bold text-zinc-600">
+              Aguardando a dupla da vez validar as respostas.
+            </p>
+          )}
+        </section>
+      </div>
+    );
+  }
 
   if ((game.status !== "revelada" && game.status !== "finalizado") || !lastMove || dismissedMoveId === lastMove.id) {
     return null;

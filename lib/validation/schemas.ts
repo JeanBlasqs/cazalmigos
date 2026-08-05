@@ -22,6 +22,11 @@ export const answerSchema = z.object({
   bet: z.coerce.number().int().min(1).max(10),
 });
 
+export const validateAnswerSchema = z.object({
+  playerId: z.string().uuid(),
+  approved: z.boolean(),
+});
+
 export const updatePlayerSchema = z.object({
   playerId: z.string().uuid(),
   team: z.enum(["a", "b"]).optional(),

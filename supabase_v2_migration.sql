@@ -19,6 +19,10 @@ alter table games
   add column if not exists answer_2 text,
   add column if not exists answer_1_at timestamptz,
   add column if not exists answer_2_at timestamptz,
+  add column if not exists validation_1 boolean,
+  add column if not exists validation_2 boolean,
+  add column if not exists validation_1_at timestamptz,
+  add column if not exists validation_2_at timestamptz,
   add column if not exists winner_team text,
   add column if not exists skip_team text,
   add column if not exists version int not null default 0,
@@ -89,7 +93,7 @@ alter table public.games
 
 alter table public.games
   add constraint games_status_check
-  check (status in ('aguardando', 'aguardando_respostas', 'revelada', 'finalizado'));
+  check (status in ('aguardando', 'aguardando_respostas', 'validando_respostas', 'revelada', 'finalizado'));
 
 alter table public.games
   drop constraint if exists games_team_a_position_check;

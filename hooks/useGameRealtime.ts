@@ -32,5 +32,11 @@ export function useGameRealtime(initialState: GameState, roomCode: string) {
     };
   }, [refresh, roomCode, supabase]);
 
+  useEffect(() => {
+    if (state.game?.status !== "revelada") return;
+    const timer = window.setTimeout(refresh, 2800);
+    return () => window.clearTimeout(timer);
+  }, [refresh, state.game?.status, state.game?.updated_at]);
+
   return { state, refresh };
 }

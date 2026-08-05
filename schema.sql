@@ -1,7 +1,7 @@
 create extension if not exists "pgcrypto";
 
 create type room_status as enum ('aguardando', 'em_andamento', 'finalizado');
-create type game_status as enum ('aguardando', 'aguardando_respostas', 'revelada', 'finalizado');
+create type game_status as enum ('aguardando', 'aguardando_respostas', 'validando_respostas', 'revelada', 'finalizado');
 create type team_name as enum ('a', 'b');
 
 create table rooms (
@@ -55,6 +55,10 @@ create table games (
   answer_2 text,
   answer_1_at timestamptz,
   answer_2_at timestamptz,
+  validation_1 boolean,
+  validation_2 boolean,
+  validation_1_at timestamptz,
+  validation_2_at timestamptz,
   winner_team team_name,
   version int not null default 0,
   updated_at timestamptz not null default now()
