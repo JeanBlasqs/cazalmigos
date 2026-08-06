@@ -123,7 +123,57 @@ export function RevealAnswers({
     );
   }
 
-  if ((game.status !== "revelada" && game.status !== "finalizado") || !lastMove || dismissedMoveId === lastMove.id) {
+  if (game.status === "finalizado") {
+    const winnerName = game.winner_team === "a" ? "vermelho" : "azul";
+
+    return (
+      <div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-black/55 p-4 backdrop-blur-sm">
+        <div className="pointer-events-none absolute inset-0">
+          {Array.from({ length: 42 }, (_, index) => (
+            <span
+              key={index}
+              className="confetti-piece"
+              style={{
+                left: `${(index * 37) % 100}%`,
+                animationDelay: `${(index % 9) * 0.12}s`,
+                backgroundColor: ["#fb7185", "#38bdf8", "#facc15", "#34d399", "#f472b6", "#ffffff"][index % 6],
+              }}
+            />
+          ))}
+        </div>
+        <section className="reveal-pop relative w-full max-w-xl rounded-3xl border border-amber-200 bg-white p-6 text-center text-zinc-950 shadow-2xl">
+          <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-600">Fim de jogo</p>
+          <h2 className="mt-2 text-4xl font-black text-rose-600">Parabens, equipe {winnerName}!</h2>
+          <p className="mt-3 text-lg font-bold text-zinc-700">
+            Voces chegaram ao final do tabuleiro. Sala {roomCode}
+          </p>
+          {lastMove && (
+            <p className="mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-black text-amber-800">
+              Ultima rodada: {lastMove.correct ? `avancou ${lastMove.spaces_moved} casas` : "sem avanco"}.
+            </p>
+          )}
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <a
+              href="/"
+              className="rounded-full bg-zinc-950 px-5 py-3 font-black text-white shadow-lg transition hover:bg-zinc-800"
+            >
+              Voltar para tela inicial
+            </a>
+            {roomCode && (
+              <a
+                href={`/sala/${roomCode}`}
+                className="rounded-full border-2 border-rose-300 bg-rose-50 px-5 py-3 font-black text-rose-700 shadow-lg transition hover:bg-rose-100"
+              >
+                Voltar ao menu da sala {roomCode}
+              </a>
+            )}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (game.status !== "revelada" || !lastMove || dismissedMoveId === lastMove.id) {
     return null;
   }
 
@@ -168,7 +218,7 @@ export function RevealAnswers({
         )}
         {lastMove.special_effect && (
           <p className="mt-2 rounded-md bg-white/80 px-3 py-2 text-sm font-bold text-zinc-700">
-            Casa especial ativada: {lastMove.special_effect.replace("penalty_skip", "pular rodada").replace("heart", "coracao").replace("bomb", "drama").replace("chips", "fichas").replace("skip", "gelo")}
+            Casa especial ativada: {lastMove.special_effect.split("|").map((effect) => effect.replace("penalty_skip", "pular rodada").replace("heart", "coracao").replace("bomb", "volta ao inicio").replace("chips", "fichas").replace("skip", "gelo")).join(" + ")}
           </p>
         )}
       </section>

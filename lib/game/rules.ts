@@ -36,15 +36,38 @@ export function resolverRodada(input: {
   const nextPosition = correct
     ? limitarPosicao(input.currentPosition, spacesMoved, input.boardSize)
     : input.currentPosition;
-  const special = correct ? aplicarCasaEspecial(nextPosition, input.boardSize) : null;
+  const specials = correct ? aplicarCasasEspeciais(nextPosition, input.boardSize) : [];
+  const special = specials.at(-1) ?? null;
+  const finalPosition = special?.nextPosition ?? nextPosition;
 
   return {
     correct,
     spacesMoved,
-    nextPosition: special?.nextPosition ?? nextPosition,
+    nextPosition: finalPosition,
     special,
-    winner: (special?.nextPosition ?? nextPosition) >= (input.boardSize ?? 50),
+    specials,
+    winner: finalPosition >= (input.boardSize ?? 50),
   };
+}
+
+export function aplicarCasasEspeciais(position: number, boardSize = 50) {
+  const applied: NonNullable<ReturnType<typeof aplicarCasaEspecial>>[] = [];
+  const visited = new Set<number>();
+  let currentPosition = position;
+
+  for (let step = 0; step < 6; step++) {
+    if (visited.has(currentPosition)) break;
+    visited.add(currentPosition);
+
+    const special = aplicarCasaEspecial(currentPosition, boardSize);
+    if (!special) break;
+
+    applied.push(special);
+    if (special.nextPosition === currentPosition) break;
+    currentPosition = special.nextPosition;
+  }
+
+  return applied;
 }
 
 export function aplicarCasaEspecial(position: number, boardSize = 50) {

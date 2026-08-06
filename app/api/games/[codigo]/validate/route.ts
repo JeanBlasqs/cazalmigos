@@ -97,7 +97,7 @@ export async function POST(
     ]);
   }
 
-  if (result.correct && result.special?.restoreChips) {
+  if (result.correct && result.specials.some((special) => special.restoreChips)) {
     await Promise.all([
       supabase.from("players").update({ chips: 10 }).eq("id", player1.id),
       supabase.from("players").update({ chips: 10 }).eq("id", player2.id),
@@ -106,7 +106,10 @@ export async function POST(
 
   const skipTeam =
     penaltySkipTeam ??
-    (result.special && "skipTurn" in result.special ? updatedGame.current_team : game.skip_team);
+    (result.specials.some((special) => "skipTurn" in special) ? updatedGame.current_team : game.skip_team);
+  const specialEffect = result.specials
+    .map((special) => `${special.kind}:${special.label}`)
+    .join("|");
 
   await supabase.from("moves").insert({
     game_id: updatedGame.id,
@@ -122,8 +125,8 @@ export async function POST(
     spaces_moved: result.spacesMoved,
     special_effect: penaltySkipTeam
       ? "penalty_skip:zerou fichas"
-      : result.special
-        ? `${result.special.kind}:${result.special.label}`
+      : specialEffect
+        ? specialEffect
         : null,
   });
 
