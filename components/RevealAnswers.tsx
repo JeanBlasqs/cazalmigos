@@ -24,6 +24,7 @@ export function RevealAnswers({
   const [validationChoice, setValidationChoice] = useState<boolean | null>(null);
   const [validating, setValidating] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [resettingRoom, setResettingRoom] = useState(false);
 
   useEffect(() => {
     setDismissedMoveId(null);
@@ -126,6 +127,24 @@ export function RevealAnswers({
   if (game.status === "finalizado") {
     const winnerName = game.winner_team === "a" ? "vermelho" : "azul";
 
+    async function resetRoom() {
+      if (!roomCode) return;
+      setResettingRoom(true);
+      const response = await fetch(`/api/rooms/${roomCode}/reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId: currentPlayerId }),
+      });
+
+      if (response.ok) {
+        window.location.href = `/sala/${roomCode}`;
+        return;
+      }
+
+      setResettingRoom(false);
+      window.location.href = `/?codigo=${roomCode}`;
+    }
+
     return (
       <div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-black/55 p-4 backdrop-blur-sm">
         <div className="pointer-events-none absolute inset-0">
@@ -160,12 +179,14 @@ export function RevealAnswers({
               Voltar para tela inicial
             </a>
             {roomCode && (
-              <a
-                href={`/sala/${roomCode}`}
-                className="rounded-full border-2 border-rose-300 bg-rose-50 px-5 py-3 font-black text-rose-700 shadow-lg transition hover:bg-rose-100"
+              <button
+                type="button"
+                onClick={resetRoom}
+                disabled={resettingRoom}
+                className="rounded-full border-2 border-rose-300 bg-rose-50 px-5 py-3 font-black text-rose-700 shadow-lg transition hover:bg-rose-100 disabled:opacity-60"
               >
-                Voltar ao menu da sala {roomCode}
-              </a>
+                {resettingRoom ? "Voltando..." : `Voltar ao menu da sala ${roomCode}`}
+              </button>
             )}
           </div>
         </section>

@@ -20,6 +20,11 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const roomCode = new URLSearchParams(window.location.search).get("codigo");
+    if (roomCode) setCode(roomCode.toUpperCase());
+  }, []);
+
   async function createRoom(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
