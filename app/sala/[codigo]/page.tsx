@@ -78,8 +78,20 @@ export default function LobbyPage({ params }: { params: Promise<{ codigo: string
   }
 
   async function fillTestPlayers() {
+    if (!playerId) return;
     setBusy(true);
-    await fetch(`/api/rooms/${codigo}/dev-fill`, { method: "POST" });
+    setNotice(null);
+    const response = await fetch(`/api/rooms/${codigo}/dev-fill`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ playerId }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setNotice(payload.error ?? "Nao foi possivel preencher jogadores de teste.");
+      setBusy(false);
+      return;
+    }
     localStorage.setItem(`room:${codigo}:testMode`, "true");
     setTestMode(true);
     await refresh();

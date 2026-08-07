@@ -3,17 +3,24 @@ import { jsonError } from "@/lib/server/api";
 import type { Player, Team } from "@/lib/game/types";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ codigo: string }> },
 ) {
-  if (process.env.NODE_ENV === "production") {
-    return jsonError("Rota de teste indisponivel em producao.", 403);
-  }
-
   const { codigo } = await params;
+  const body = await request.json().catch(() => ({}));
+  const playerId = typeof body?.playerId === "string" ? body.playerId : null;
   const supabase = createServerSupabaseClient();
   const { data: room } = await supabase.from("rooms").select("*").eq("code", codigo.toUpperCase()).maybeSingle();
   if (!room) return jsonError("Sala nao encontrada.", 404);
+
+  if (!playerId) return jsonError("Somente o administrador pode preencher teste.", 403);
+  const { data: requester } = await supabase
+    .from("players")
+    .select("id,is_host")
+    .eq("id", playerId)
+    .eq("room_id", room.id)
+    .maybeSingle();
+  if (!requester?.is_host) return jsonError("Somente o administrador pode preencher teste.", 403);
 
   const { data: existingPlayers } = await supabase
     .from("players")
@@ -52,6 +59,8 @@ export async function POST(
     const { error } = await supabase.from("players").insert(inserts);
     if (error) return jsonError(error.message, 500);
   }
+
+  await supabase.from("players").update({ ready: true, chips: 10 }).eq("room_id", room.id);
 
   const { data: updatedPlayers } = await supabase
     .from("players")
